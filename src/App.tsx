@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import AudioControls from './components/AudioControls';
 import RecordingHistory from './components/RecordingHistory';
@@ -94,11 +95,12 @@ function App() {
         setIsMicEnabled(true);
         setMicPermissionStatus('granted');
         setError(null);
-      } catch (err: any) {
-        if (err.name === 'NotAllowedError') {
+      } catch (err) {
+        const error = err as Error;
+        if (error.name === 'NotAllowedError') {
           setMicPermissionStatus('denied');
           setError('マイクへのアクセスが拒否されました。ブラウザの設定からマイクの使用を許可してください。');
-        } else if (err.name === 'NotFoundError') {
+        } else if (error.name === 'NotFoundError') {
           setError('マイクが見つかりません。マイクが接続されているか確認してください。');
         } else {
           setError('マイクの初期化に失敗しました。');
@@ -179,15 +181,35 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen">
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-6 p-4 glass-card border border-red-500/20 text-red-400 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⚠️</span>
+                <p>{error}</p>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setError(null)}
+                  className="ml-auto p-1 hover:bg-red-500/20 rounded"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         <AudioControls
           isMicEnabled={isMicEnabled}
@@ -205,20 +227,58 @@ function App() {
           onRecordingStop={handleRecordingStop}
         />
         
-        <div className="mt-8">
+        <motion.div 
+          className="mt-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
           <StorageIndicator
             usage={storageUsage}
             limit={STORAGE_LIMIT}
           />
-        </div>
+        </motion.div>
         
-        <div className="mt-8">
+        <motion.div 
+          className="mt-8 mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
           <RecordingHistory
             recordings={recordings}
             onDelete={handleRecordingDelete}
           />
-        </div>
+        </motion.div>
       </main>
+      
+      {/* Background gradient animation */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -100, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl"
+          animate={{
+            x: [0, -100, 0],
+            y: [0, 100, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      </div>
     </div>
   );
 }

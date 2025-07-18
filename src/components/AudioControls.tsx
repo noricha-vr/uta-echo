@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { EffectConfig, EffectType } from '../types';
 import EffectPanel from './EffectPanel';
 import Visualizer from './Visualizer';
@@ -11,7 +12,7 @@ interface AudioControlsProps {
   activePreset: string | null;
   isRecording: boolean;
   recordingDuration: number;
-  audioEngine: any;
+  audioEngine: { getAnalyserData: () => Uint8Array | null };
   onMicToggle: () => void;
   onMicGainChange: (gain: number) => void;
   onEffectsChange: (effects: EffectConfig[]) => void;
@@ -20,16 +21,16 @@ interface AudioControlsProps {
   onRecordingStop: () => void;
 }
 
-const AVAILABLE_EFFECTS: { type: EffectType; name: string }[] = [
-  { type: 'reverb', name: 'リバーブ' },
-  { type: 'delay', name: 'ディレイ' },
-  { type: 'distortion', name: 'ディストーション' },
-  { type: 'pitch', name: 'ピッチシフト' },
-  { type: 'chorus', name: 'コーラス' },
-  { type: 'flanger', name: 'フランジャー' },
-  { type: 'lowpass', name: 'ローパスフィルター' },
-  { type: 'highpass', name: 'ハイパスフィルター' },
-  { type: 'compressor', name: 'コンプレッサー' }
+const AVAILABLE_EFFECTS: { type: EffectType; name: string; icon: string }[] = [
+  { type: 'reverb', name: 'リバーブ', icon: '🏛️' },
+  { type: 'delay', name: 'ディレイ', icon: '🔊' },
+  { type: 'distortion', name: 'ディストーション', icon: '🎸' },
+  { type: 'pitch', name: 'ピッチシフト', icon: '🎵' },
+  { type: 'chorus', name: 'コーラス', icon: '👥' },
+  { type: 'flanger', name: 'フランジャー', icon: '🌊' },
+  { type: 'lowpass', name: 'ローパスフィルター', icon: '🔻' },
+  { type: 'highpass', name: 'ハイパスフィルター', icon: '🔺' },
+  { type: 'compressor', name: 'コンプレッサー', icon: '🗜️' }
 ];
 
 const AudioControls = ({
@@ -68,7 +69,7 @@ const AudioControls = ({
     const newEffect = createDefaultEffect(type);
     newEffect.enabled = true;
     onEffectsChange([...effects, newEffect]);
-    onPresetChange(null); // Clear preset when manually adding effects
+    onPresetChange(null);
     setShowEffectMenu(false);
   };
 
@@ -76,13 +77,13 @@ const AudioControls = ({
     const newEffects = [...effects];
     newEffects[index] = updatedEffect;
     onEffectsChange(newEffects);
-    onPresetChange(null); // Clear preset when modifying effects
+    onPresetChange(null);
   };
 
   const handleEffectRemove = (index: number) => {
     const newEffects = effects.filter((_, i) => i !== index);
     onEffectsChange(newEffects);
-    onPresetChange(null); // Clear preset when removing effects
+    onPresetChange(null);
   };
 
   const availableEffectsToAdd = AVAILABLE_EFFECTS.filter(
@@ -90,152 +91,287 @@ const AudioControls = ({
   );
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       {/* マイクとビジュアライザー */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">音声コントロール</h2>
+      <motion.div 
+        className="glass-card p-6"
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <h2 className="text-2xl font-semibold mb-4 gradient-text">音声コントロール</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* マイクボタン */}
             <div>
-              <h3 className="text-lg font-medium mb-3">マイク設定</h3>
-              <button
+              <h3 className="text-lg font-medium mb-3 text-gray-200">マイク設定</h3>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={onMicToggle}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                className={`relative px-8 py-4 rounded-full font-medium text-lg transition-all duration-300 ${
                   isMicEnabled
-                    ? 'bg-red-500 hover:bg-red-600 text-white'
-                    : 'bg-green-500 hover:bg-green-600 text-white'
+                    ? 'glow-button pulse-glow'
+                    : 'glass-card hover:bg-white/20'
                 }`}
               >
-                {isMicEnabled ? 'マイクOFF' : 'マイクON'}
-              </button>
+                <motion.div
+                  animate={{ 
+                    rotate: isMicEnabled ? 360 : 0,
+                  }}
+                  transition={{ duration: 0.5 }}
+                  className="inline-flex items-center gap-3"
+                >
+                  <span className="text-2xl">{isMicEnabled ? '🎤' : '🎙️'}</span>
+                  <span>{isMicEnabled ? 'マイクOFF' : 'マイクON'}</span>
+                </motion.div>
+                
+                {/* Recording indicator */}
+                <AnimatePresence>
+                  {isMicEnabled && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full"
+                    >
+                      <motion.div
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute inset-0 bg-green-400 rounded-full opacity-75"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             </div>
             
+            {/* マイクゲイン */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 マイクゲイン: {(micGain * 100).toFixed(0)}%
               </label>
-              <input
-                type="range"
-                min="0"
-                max="200"
-                value={micGain * 100}
-                onChange={(e) => onMicGainChange(Number(e.target.value) / 100)}
-                disabled={!isMicEnabled}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
-              />
+              <div className="relative">
+                <input
+                  type="range"
+                  min="0"
+                  max="200"
+                  value={micGain * 100}
+                  onChange={(e) => onMicGainChange(Number(e.target.value) / 100)}
+                  disabled={!isMicEnabled}
+                  className="w-full h-3 rounded-lg appearance-none cursor-pointer bg-gray-700 disabled:opacity-50"
+                  style={{
+                    background: `linear-gradient(to right, var(--gradient-start) 0%, var(--gradient-mid) ${micGain * 50}%, transparent ${micGain * 50}%)`
+                  }}
+                />
+                <motion.div
+                  className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full shadow-lg pointer-events-none"
+                  style={{ left: `${(micGain * 100) / 2}%` }}
+                  animate={{ scale: isMicEnabled ? 1 : 0.8 }}
+                />
+              </div>
             </div>
           </div>
           
-          <div>
-            <h3 className="text-lg font-medium mb-3">音声ビジュアライザー</h3>
-            <Visualizer audioEngine={audioEngine} isActive={isMicEnabled} />
-          </div>
+          {/* ビジュアライザー */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h3 className="text-lg font-medium mb-3 text-gray-200">音声ビジュアライザー</h3>
+            <div className="relative overflow-hidden rounded-xl">
+              <Visualizer audioEngine={audioEngine} isActive={isMicEnabled} />
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* プリセット */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-medium mb-3">プリセット</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {DEFAULT_PRESETS.map(preset => (
-            <button
+      <motion.div 
+        className="glass-card p-6"
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <h3 className="text-lg font-medium mb-4 text-gray-200">プリセット</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {DEFAULT_PRESETS.map((preset, index) => (
+            <motion.button
               key={preset.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handlePresetSelect(preset.id)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
                 activePreset === preset.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  ? 'glow-button text-white'
+                  : 'glass-card hover:bg-white/10 text-gray-200'
               }`}
             >
-              {preset.name}
-            </button>
+              <motion.span
+                animate={{ 
+                  rotate: activePreset === preset.id ? [0, 10, -10, 0] : 0 
+                }}
+                transition={{ duration: 0.5 }}
+                className="inline-block"
+              >
+                {preset.name}
+              </motion.span>
+            </motion.button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* エフェクトチェーン */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <motion.div 
+        className="glass-card p-6"
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">エフェクトチェーン</h3>
+          <h3 className="text-lg font-medium text-gray-200">エフェクトチェーン</h3>
           <div className="relative">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowEffectMenu(!showEffectMenu)}
               disabled={availableEffectsToAdd.length === 0}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="px-4 py-2 glow-button text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              エフェクト追加
-            </button>
+              <span className="inline-flex items-center gap-2">
+                <motion.span
+                  animate={{ rotate: showEffectMenu ? 45 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  ✨
+                </motion.span>
+                エフェクト追加
+              </span>
+            </motion.button>
             
-            {showEffectMenu && availableEffectsToAdd.length > 0 && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                <div className="py-1">
-                  {availableEffectsToAdd.map(effect => (
-                    <button
-                      key={effect.type}
-                      onClick={() => handleAddEffect(effect.type)}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
-                    >
-                      {effect.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <AnimatePresence>
+              {showEffectMenu && availableEffectsToAdd.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                  className="absolute right-0 mt-2 w-64 glass-card p-2 z-10"
+                >
+                  <div className="space-y-1">
+                    {availableEffectsToAdd.map((effect, index) => (
+                      <motion.button
+                        key={effect.type}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={{ x: 10, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                        onClick={() => handleAddEffect(effect.type)}
+                        className="block w-full text-left px-4 py-3 rounded-lg transition-all duration-200 text-gray-200"
+                      >
+                        <span className="inline-flex items-center gap-3">
+                          <span className="text-2xl">{effect.icon}</span>
+                          <span>{effect.name}</span>
+                        </span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
         
-        {effects.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            エフェクトが追加されていません
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {effects.map((effect, index) => (
-              <EffectPanel
-                key={`${effect.type}-${index}`}
-                effect={effect}
-                onChange={(updated) => handleEffectChange(index, updated)}
-                onRemove={() => handleEffectRemove(index)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+        <AnimatePresence mode="popLayout">
+          {effects.length === 0 ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-gray-400 text-center py-12"
+            >
+              エフェクトが追加されていません
+            </motion.p>
+          ) : (
+            <motion.div className="space-y-3">
+              {effects.map((effect, index) => (
+                <motion.div
+                  key={`${effect.type}-${index}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  layout
+                >
+                  <EffectPanel
+                    effect={effect}
+                    onChange={(updated) => handleEffectChange(index, updated)}
+                    onRemove={() => handleEffectRemove(index)}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {/* 録音コントロール */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-medium mb-3">録音</h3>
-        <div className="flex items-center space-x-4">
-          {!isRecording ? (
-            <button
-              onClick={onRecordingStart}
-              disabled={!isMicEnabled}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                isMicEnabled
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              録音開始
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={onRecordingStop}
-                className="px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors"
+      <motion.div 
+        className="glass-card p-6"
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
+      >
+        <h3 className="text-lg font-medium mb-4 text-gray-200">録音</h3>
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={isRecording ? onRecordingStop : onRecordingStart}
+            disabled={!isMicEnabled}
+            className={`px-6 py-3 rounded-full font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRecording
+                ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/50'
+                : 'glass-card hover:bg-white/20 text-gray-200'
+            }`}
+          >
+            <span className="inline-flex items-center gap-3">
+              <motion.span
+                animate={{ scale: isRecording ? [1, 1.2, 1] : 1 }}
+                transition={{ duration: 1, repeat: isRecording ? Infinity : 0 }}
+                className="inline-block w-3 h-3 bg-current rounded-full"
+              />
+              {isRecording ? '録音停止' : '録音開始'}
+            </span>
+          </motion.button>
+          
+          <AnimatePresence>
+            {isRecording && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="text-lg font-mono text-gray-300"
               >
-                録音停止
-              </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="font-mono text-lg">{formatTime(recordingDuration)}</span>
-              </div>
-            </>
-          )}
+                {formatTime(recordingDuration)}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

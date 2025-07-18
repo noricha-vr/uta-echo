@@ -1,4 +1,4 @@
-import type { EffectPreset, EffectConfig } from '../types';
+import type { EffectPreset, EffectConfig, EffectType } from '../types';
 import { EFFECT_PARAMS } from '../types';
 
 export const DEFAULT_PRESETS: EffectPreset[] = [
@@ -154,8 +154,8 @@ export const DEFAULT_PRESETS: EffectPreset[] = [
   }
 ];
 
-export function createDefaultEffect(type: string): EffectConfig {
-  const params = EFFECT_PARAMS[type as keyof typeof EFFECT_PARAMS];
+export function createDefaultEffect(type: EffectType): EffectConfig {
+  const params = EFFECT_PARAMS[type];
   const defaultParams: Record<string, number> = {};
   
   for (const [key, config] of Object.entries(params)) {
@@ -163,7 +163,7 @@ export function createDefaultEffect(type: string): EffectConfig {
   }
   
   return {
-    type: type as any,
+    type,
     enabled: false,
     params: defaultParams
   };

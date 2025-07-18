@@ -1,3 +1,175 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dynamic color variables for animations */
+    --hue-primary: 260;
+    --hue-secondary: 280;
+    --hue-accent: 320;
+    
+    /* Gradient colors */
+    --gradient-start: hsl(var(--hue-primary), 80%, 60%);
+    --gradient-mid: hsl(var(--hue-secondary), 70%, 50%);
+    --gradient-end: hsl(var(--hue-accent), 85%, 65%);
+    
+    /* Glass morphism */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: rgba(0, 0, 0, 0.1);
+    
+    /* Animation durations */
+    --animation-fast: 0.3s;
+    --animation-normal: 0.5s;
+    --animation-slow: 0.8s;
+    
+    /* Glow effects */
+    --glow-primary: 0 0 20px hsla(var(--hue-primary), 80%, 60%, 0.5);
+    --glow-intense: 0 0 40px hsla(var(--hue-primary), 80%, 60%, 0.8);
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+  }
+  
+  /* Smooth animations for all users by default */
+  * {
+    @apply transition-colors duration-300;
+  }
+  
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  body {
+    @apply bg-gray-950 text-white overflow-x-hidden;
+    background-image: 
+      radial-gradient(at 20% 80%, hsla(var(--hue-primary), 70%, 40%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 80% 20%, hsla(var(--hue-secondary), 70%, 40%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 40% 40%, hsla(var(--hue-accent), 70%, 40%, 0.1) 0px, transparent 50%);
+  }
+}
+
+@layer components {
+  /* Glass morphism card */
+  .glass-card {
+    @apply relative overflow-hidden rounded-2xl;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px var(--glass-shadow);
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end));
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+  
+  /* Glow button */
+  .glow-button {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid));
+    box-shadow: var(--glow-primary);
+    transition: all var(--animation-fast) ease;
+  }
+  
+  .glow-button:hover {
+    box-shadow: var(--glow-intense);
+    transform: translateY(-2px);
+  }
+  
+  /* Pulse animation for primary actions */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  /* Ripple effect container */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .ripple::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+  
+  .ripple:active::before {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+@layer utilities {
+  /* Custom animations */
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: var(--glow-primary);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: var(--glow-intense);
+    }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Utility classes */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+  
+  .hover-lift {
+    @apply transition-transform duration-300;
+  }
+  
+  .hover-lift:hover {
+    @apply -translate-y-1;
+  }
+}
