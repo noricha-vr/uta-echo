@@ -3,14 +3,16 @@ import Header from './components/Header';
 import AudioControls from './components/AudioControls';
 import RecordingHistory from './components/RecordingHistory';
 import StorageIndicator from './components/StorageIndicator';
-import type { RecordingData, MicPermissionStatus } from './types';
+import type { RecordingData, MicPermissionStatus, EffectConfig } from './types';
 import { AudioEngine } from './services/AudioEngine';
 import { StorageManager } from './services/StorageManager';
+import { DEFAULT_PRESETS } from './utils/presets';
 
 function App() {
   const [isMicEnabled, setIsMicEnabled] = useState(false);
-  const [isEffectEnabled, setIsEffectEnabled] = useState(true);
-  const [effectIntensity, setEffectIntensity] = useState(50);
+  const [micGain, setMicGain] = useState(1);
+  const [effects, setEffects] = useState<EffectConfig[]>([]);
+  const [activePreset, setActivePreset] = useState<string | null>('clean');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordings, setRecordings] = useState<RecordingData[]>([]);
@@ -26,6 +28,13 @@ function App() {
   useEffect(() => {
     loadRecordings();
     updateStorageUsage();
+    
+    // Set initial preset
+    const cleanPreset = DEFAULT_PRESETS.find(p => p.id === 'clean');
+    if (cleanPreset) {
+      setEffects([...cleanPreset.effects]);
+      setMicGain(cleanPreset.micGain);
+    }
     
     return () => {
       audioEngine.cleanup();
@@ -44,6 +53,18 @@ function App() {
     
     return () => clearInterval(interval);
   }, [isRecording]);
+
+  useEffect(() => {
+    if (isMicEnabled) {
+      audioEngine.updateEffects(effects);
+    }
+  }, [effects, isMicEnabled]);
+
+  useEffect(() => {
+    if (isMicEnabled) {
+      audioEngine.setMicGain(micGain);
+    }
+  }, [micGain, isMicEnabled]);
 
   const loadRecordings = async () => {
     try {
@@ -68,6 +89,8 @@ function App() {
     if (!isMicEnabled) {
       try {
         await audioEngine.initializeAudio();
+        audioEngine.setMicGain(micGain);
+        audioEngine.updateEffects(effects);
         setIsMicEnabled(true);
         setMicPermissionStatus('granted');
         setError(null);
@@ -90,14 +113,16 @@ function App() {
     }
   };
 
-  const handleEffectToggle = () => {
-    setIsEffectEnabled(!isEffectEnabled);
-    audioEngine.toggleEffect(!isEffectEnabled);
+  const handleMicGainChange = (gain: number) => {
+    setMicGain(gain);
   };
 
-  const handleEffectIntensityChange = (value: number) => {
-    setEffectIntensity(value);
-    audioEngine.applyReverb(value);
+  const handleEffectsChange = (newEffects: EffectConfig[]) => {
+    setEffects(newEffects);
+  };
+
+  const handlePresetChange = (presetId: string | null) => {
+    setActivePreset(presetId);
   };
 
   const handleRecordingStart = () => {
@@ -114,14 +139,21 @@ function App() {
   const handleRecordingStop = async () => {
     try {
       const blob = await audioEngine.stopRecording();
+      
+      // Find preset name if using one
+      const presetName = activePreset 
+        ? DEFAULT_PRESETS.find(p => p.id === activePreset)?.name 
+        : undefined;
+      
       const recording: RecordingData = {
         id: Date.now().toString(),
         blob,
         date: new Date(),
         duration: recordingDuration,
-        effect: 'reverb',
-        effectLevel: effectIntensity,
+        effects: [...effects],
+        micGain,
         size: blob.size,
+        presetName
       };
       
       await storageManager.saveRecording(recording);
@@ -159,26 +191,33 @@ function App() {
         
         <AudioControls
           isMicEnabled={isMicEnabled}
-          isEffectEnabled={isEffectEnabled}
-          effectIntensity={effectIntensity}
+          micGain={micGain}
+          effects={effects}
+          activePreset={activePreset}
           isRecording={isRecording}
           recordingDuration={recordingDuration}
+          audioEngine={audioEngine}
           onMicToggle={handleMicToggle}
-          onEffectToggle={handleEffectToggle}
-          onEffectIntensityChange={handleEffectIntensityChange}
+          onMicGainChange={handleMicGainChange}
+          onEffectsChange={handleEffectsChange}
+          onPresetChange={handlePresetChange}
           onRecordingStart={handleRecordingStart}
           onRecordingStop={handleRecordingStop}
         />
         
-        <StorageIndicator
-          usage={storageUsage}
-          limit={STORAGE_LIMIT}
-        />
+        <div className="mt-8">
+          <StorageIndicator
+            usage={storageUsage}
+            limit={STORAGE_LIMIT}
+          />
+        </div>
         
-        <RecordingHistory
-          recordings={recordings}
-          onDelete={handleRecordingDelete}
-        />
+        <div className="mt-8">
+          <RecordingHistory
+            recordings={recordings}
+            onDelete={handleRecordingDelete}
+          />
+        </div>
       </main>
     </div>
   );

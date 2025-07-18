@@ -11,8 +11,22 @@ class RecordingDatabase extends Dexie {
 
   constructor() {
     super('UtaEchoDatabase');
-    this.version(1).stores({
-      recordings: 'id, date, duration, effect, effectLevel, size',
+    this.version(2).stores({
+      recordings: 'id, date, duration, size',
+    }).upgrade(tx => {
+      // Migrate from version 1 to 2
+      return tx.table('recordings').toCollection().modify(recording => {
+        if ('effect' in recording && 'effectLevel' in recording) {
+          recording.effects = [{
+            type: 'reverb',
+            enabled: true,
+            params: { wetness: recording.effectLevel }
+          }];
+          recording.micGain = 1;
+          delete recording.effect;
+          delete recording.effectLevel;
+        }
+      });
     });
   }
 }
@@ -34,10 +48,11 @@ export class StorageManager {
         blobData: arrayBuffer,
         date: recording.date,
         duration: recording.duration,
-        effect: recording.effect,
-        effectLevel: recording.effectLevel,
+        effects: recording.effects,
+        micGain: recording.micGain,
         size: recording.size,
         title: recording.title,
+        presetName: recording.presetName,
       };
 
       await this.db.recordings.add(dbRecording);
@@ -61,10 +76,11 @@ export class StorageManager {
         blob: new Blob([dbRec.blobData], { type: 'audio/webm;codecs=opus' }),
         date: dbRec.date,
         duration: dbRec.duration,
-        effect: dbRec.effect,
-        effectLevel: dbRec.effectLevel,
+        effects: dbRec.effects || [],
+        micGain: dbRec.micGain || 1,
         size: dbRec.size,
         title: dbRec.title,
+        presetName: dbRec.presetName,
       }));
     } catch (error) {
       console.error('Failed to get recordings:', error);

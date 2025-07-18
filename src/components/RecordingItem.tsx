@@ -119,8 +119,9 @@ const RecordingItem = ({
             <div>
               <p className="font-medium">{formatDate(recording.date)}</p>
               <p className="text-sm text-gray-600">
-                {formatDuration(recording.duration)} | {formatSize(recording.size)} | 
-                リバーブ {recording.effectLevel}%
+                {formatDuration(recording.duration)} | {formatSize(recording.size)}
+                {recording.presetName && ` | ${recording.presetName}`}
+                {!recording.presetName && recording.effects && recording.effects.length > 0 && ` | カスタム (${recording.effects.filter(e => e.enabled).length} エフェクト)`}
               </p>
             </div>
           </div>
