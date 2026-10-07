@@ -1,0 +1,19 @@
+# Dependabot の設定（週次。自動マージは入れていない）
+version: 2
+updates:
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 2
+    groups:
+      minor-and-patch:                 # 週 1 回の更新は patch と minor を 1 本にまとめる
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+      security:                        # security updates も同じエコシステムで 1 本にまとめる
+        applies-to: security-updates
+        update-types: ["minor", "patch"]
+    labels: ["dependencies"]
