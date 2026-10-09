@@ -1,6 +1,5 @@
-# Dependabot の設定。CI が無いので version updates は止め、security updates だけを受ける（2026-10-09 CEO 決定）
-# open-pull-requests-limit: 0 は version updates だけを止める（security updates はこの上限の対象外）
-# bun は Dependabot の security updates に未対応（GitHub docs の対応表、2026-10-09 時点）。bun の依存の更新 PR は来ない。
+# Dependabot の設定。bun の依存と GitHub Actions を週 1 回更新する
+# patch / minor は CI（build）と dependabot-policy が緑なら自動マージ（.github/workflows/dependabot-automerge.yml）
 version: 2
 updates:
   - package-ecosystem: "bun"
@@ -10,9 +9,25 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 3
     groups:
+      minor-and-patch:                 # 週 1 回の更新は patch と minor を 1 本にまとめる
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
       security:                        # security updates も同じエコシステムで 1 本にまとめる
         applies-to: security-updates
+        update-types: ["minor", "patch"]
+    labels: ["dependencies"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 2
+    groups:
+      actions:
         update-types: ["minor", "patch"]
     labels: ["dependencies"]
