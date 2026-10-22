@@ -43,7 +43,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isRecording) {
       interval = setInterval(() => {
         setRecordingDuration(prev => prev + 1);
