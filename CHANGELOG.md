@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-22 開発ツール更新
+
+- TypeScript 7 と Vite 8 / React plugin 6 を互換性のある組み合わせに更新。lint 用 TypeScript API 6 は併存し、ブラウザの録音タイマーの型を標準 setInterval から推論します。録音・保存形式・DB スキーマは変更しません。
+
 ## [3.0.0] - 2025-01-18
 
 ### 追加

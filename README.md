@@ -40,7 +40,7 @@
 
 ### 前提条件
 
-- Node.js 18以上
+- Node.js 20.19 以上の 20 系、または 22.12 以上（本番ビルド: 22.16.0）
 - Docker & Docker Compose
 - Bun（推奨）またはnpm
 
@@ -89,7 +89,7 @@ Cloudflare Pages向けの設定：
 
 - ビルドコマンド: `npm run build`
 - 出力ディレクトリ: `dist`
-- Node.jsバージョン: 18
+- Node.jsバージョン: 22.16.0
 
 ## 技術スタック
 
@@ -116,3 +116,5 @@ Cloudflare Pages向けの設定：
 ## ライセンス
 
 MIT
+
+TypeScript の型検査には native compiler 7.0.2 を明示して使用し、ESLint の parser 向け API は TypeScript 6.0.3 を併存させています。`npm run build` は Bun 未導入でも実行できます。
