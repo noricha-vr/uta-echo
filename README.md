@@ -40,7 +40,7 @@
 
 ### 前提条件
 
-- Node.js 18以上
+- Node.js 22.16.0（CI と同じバージョンを推奨。ESLint 10 は ^20.19.0 / ^22.13.0 / 24 以降に対応）
 - Docker & Docker Compose
 - Bun（推奨）またはnpm
 
@@ -89,7 +89,7 @@ Cloudflare Pages向けの設定：
 
 - ビルドコマンド: `npm run build`
 - 出力ディレクトリ: `dist`
-- Node.jsバージョン: 18
+- Node.jsバージョン: 22.16.0（CI と共通）
 
 ## 技術スタック
 
