@@ -116,3 +116,5 @@ Cloudflare Pages向けの設定：
 ## ライセンス
 
 MIT
+
+TypeScript の型検査には native compiler 7.0.2 を明示して使用し、ESLint の parser 向け API は TypeScript 6.0.3 を併存させています。`npm run build` は Bun 未導入でも実行できます。

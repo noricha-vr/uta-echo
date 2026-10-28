@@ -1,4 +1,4 @@
-import lamejs from 'lamejs';
+import { Mp3Encoder } from '@breezystack/lamejs';
 
 export async function convertToMp3(webmBlob: Blob): Promise<Blob> {
   try {
@@ -13,10 +13,10 @@ export async function convertToMp3(webmBlob: Blob): Promise<Blob> {
     const samples = audioBuffer.length;
     
     // Create MP3 encoder
-    const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, 128); // 128 kbps
+    const mp3encoder = new Mp3Encoder(channels, sampleRate, 128); // 128 kbps
     
     // Process audio data
-    const mp3Data: Int8Array[] = [];
+    const mp3Data: Uint8Array[] = [];
     const sampleBlockSize = 1152; // Must be 1152 for MP3
     
     // Convert float samples to 16-bit PCM
